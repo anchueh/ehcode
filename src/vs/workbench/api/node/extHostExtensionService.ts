@@ -11,7 +11,6 @@ import { connectProxyResolver } from './proxyResolver.js';
 import { AbstractExtHostExtensionService } from '../common/extHostExtensionService.js';
 import { ExtHostDownloadService } from './extHostDownloadService.js';
 import { URI } from '../../../base/common/uri.js';
-import { Schemas } from '../../../base/common/network.js';
 import { IExtensionDescription } from '../../../platform/extensions/common/extensions.js';
 import { ExtensionRuntime } from '../common/extHostTypes.js';
 import { CLIServer } from './extHostCLIServer.js';
@@ -112,9 +111,6 @@ export class ExtHostExtensionService extends AbstractExtHostExtensionService {
 	}
 
 	protected async _loadCommonJSModule<T>(extension: IExtensionDescription | null, module: URI, activationTimesBuilder: ExtensionActivationTimesBuilder): Promise<T> {
-		if (module.scheme !== Schemas.file) {
-			throw new Error(`Cannot load URI: '${module}', must be of file-scheme`);
-		}
 		let r: T | null = null;
 		activationTimesBuilder.codeLoadingStart();
 		this._logService.trace(`ExtensionService#loadCommonJSModule ${module.toString(true)}`);
@@ -127,7 +123,9 @@ export class ExtHostExtensionService extends AbstractExtHostExtensionService {
 			if (extensionId) {
 				performance.mark(`code/extHost/willLoadExtensionCode/${extensionId}`);
 			}
-			r = <T>(require.__$__nodeRequire ?? require /* TODO@esm drop the first */)(module.fsPath);
+			// Handle both ESM and CommonJS patterns
+			const nodeRequire = require;
+			r = <T>(nodeRequire(module.fsPath));
 		} finally {
 			if (extensionId) {
 				performance.mark(`code/extHost/didLoadExtensionCode/${extensionId}`);
