@@ -19,3 +19,6 @@ import '../common/metricsService.js'
 
 // updates
 import '../common/voidUpdateService.js'
+
+// vector search
+import '../common/vectorSearchService.js'

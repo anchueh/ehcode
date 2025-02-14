@@ -126,6 +126,7 @@ import { IMetricsService } from '../../platform/void/common/metricsService.js';
 import { MetricsMainService } from '../../platform/void/electron-main/metricsMainService.js';
 import { VoidMainUpdateService } from '../../platform/void/electron-main/voidUpdateMainService.js';
 import { IVoidUpdateService } from '../../platform/void/common/voidUpdateService.js';
+import { VectorSearchMainService } from '../../platform/void/electron-main/vectorSearchMainService.js';
 /**
  * The main VS Code application. There will only ever be one instance,
  * even if the user starts many instances (e.g. from the command line).
@@ -1253,6 +1254,9 @@ export class CodeApplication extends Disposable {
 
 		const llmMessageChannel = new LLMMessageChannel(accessor.get(IMetricsService));
 		mainProcessElectronServer.registerChannel('void-channel-llmMessageService', llmMessageChannel);
+
+		const vectorSearchService = new VectorSearchMainService();
+		mainProcessElectronServer.registerChannel('void-channel-vector-search', vectorSearchService);
 
 		// Extension Host Debug Broadcasting
 		const electronExtensionHostDebugBroadcastChannel = new ElectronExtensionHostDebugBroadcastChannel(accessor.get(IWindowsMainService));

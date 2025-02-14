@@ -85,6 +85,7 @@
     "@microsoft/1ds-post-js": "^3.2.13",
     "@mistralai/mistralai": "^1.4.0",
     "@parcel/watcher": "2.1.0",
+    "@qdrant/js-client-rest": "^1.13.0",
     "@rrweb/record": "^2.0.0-alpha.17",
     "@rrweb/types": "^2.0.0-alpha.17",
     "@vscode/deviceid": "^0.1.1",

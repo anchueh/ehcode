@@ -1,16 +1,17 @@
+/* eslint-disable */
 /*--------------------------------------------------------------------------------------
  *  Copyright 2025 Glass Devtools, Inc. All rights reserved.
  *  Licensed under the Apache License, Version 2.0. See LICENSE.txt for more information.
  *--------------------------------------------------------------------------------------*/
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { ThreadStreamState, ThreadsState } from '../../../chatThreadService.js'
-import { RefreshableProviderName, SettingsOfProvider } from '../../../../../../../platform/void/common/voidSettingsTypes.js'
+import { RefreshableProviderName } from '../../../../../../../platform/void/common/voidSettingsTypes.js'
 import { IDisposable } from '../../../../../../../base/common/lifecycle.js'
 import { VoidSidebarState } from '../../../sidebarStateService.js'
 import { VoidSettingsState } from '../../../../../../../platform/void/common/voidSettingsService.js'
 import { ColorScheme } from '../../../../../../../platform/theme/common/theme.js'
-import { VoidUriState } from '../../../voidUriStateService.js';
+import { VoidUriState } from '../../../voidUriStateService.js'
 import { VoidQuickEditState } from '../../../quickEditStateService.js'
 import { RefreshModelStateOfProvider } from '../../../../../../../platform/void/common/refreshModelService.js'
 
@@ -18,21 +19,22 @@ import { RefreshModelStateOfProvider } from '../../../../../../../platform/void/
 
 
 
-import { ServicesAccessor } from '../../../../../../../editor/browser/editorExtensions.js';
-import { IModelService } from '../../../../../../../editor/common/services/model.js';
-import { IClipboardService } from '../../../../../../../platform/clipboard/common/clipboardService.js';
-import { IContextViewService, IContextMenuService } from '../../../../../../../platform/contextview/browser/contextView.js';
-import { IFileService } from '../../../../../../../platform/files/common/files.js';
-import { IHoverService } from '../../../../../../../platform/hover/browser/hover.js';
-import { IThemeService } from '../../../../../../../platform/theme/common/themeService.js';
-import { ILLMMessageService } from '../../../../../../../platform/void/common/llmMessageService.js';
-import { IRefreshModelService } from '../../../../../../../platform/void/common/refreshModelService.js';
-import { IVoidSettingsService } from '../../../../../../../platform/void/common/voidSettingsService.js';
-import { IInlineDiffsService } from '../../../inlineDiffsService.js';
-import { IVoidUriStateService } from '../../../voidUriStateService.js';
-import { IQuickEditStateService } from '../../../quickEditStateService.js';
-import { ISidebarStateService } from '../../../sidebarStateService.js';
-import { IChatThreadService } from '../../../chatThreadService.js';
+import { ServicesAccessor } from '../../../../../../../editor/browser/editorExtensions.js'
+import { IModelService } from '../../../../../../../editor/common/services/model.js'
+import { IClipboardService } from '../../../../../../../platform/clipboard/common/clipboardService.js'
+import { IContextViewService, IContextMenuService } from '../../../../../../../platform/contextview/browser/contextView.js'
+import { IFileService } from '../../../../../../../platform/files/common/files.js'
+import { IHoverService } from '../../../../../../../platform/hover/browser/hover.js'
+import { IThemeService } from '../../../../../../../platform/theme/common/themeService.js'
+import { ILLMMessageService } from '../../../../../../../platform/void/common/llmMessageService.js'
+import { IRefreshModelService } from '../../../../../../../platform/void/common/refreshModelService.js'
+import { IVoidSettingsService } from '../../../../../../../platform/void/common/voidSettingsService.js'
+import { IVectorSearchService } from '../../../../../../../platform/void/common/vectorSearchService.js'
+import { IInlineDiffsService } from '../../../inlineDiffsService.js'
+import { IVoidUriStateService } from '../../../voidUriStateService.js'
+import { IQuickEditStateService } from '../../../quickEditStateService.js'
+import { ISidebarStateService } from '../../../sidebarStateService.js'
+import { IChatThreadService } from '../../../chatThreadService.js'
 import { IInstantiationService } from '../../../../../../../platform/instantiation/common/instantiation.js'
 import { ICodeEditorService } from '../../../../../../../editor/browser/services/codeEditorService.js'
 import { ICommandService } from '../../../../../../../platform/commands/common/commands.js'
@@ -197,6 +199,7 @@ const getReactAccessor = (accessor: ServicesAccessor) => {
 		IQuickEditStateService: accessor.get(IQuickEditStateService),
 		ISidebarStateService: accessor.get(ISidebarStateService),
 		IChatThreadService: accessor.get(IChatThreadService),
+		IVectorSearchService: accessor.get(IVectorSearchService),
 
 		IInstantiationService: accessor.get(IInstantiationService),
 		ICodeEditorService: accessor.get(ICodeEditorService),

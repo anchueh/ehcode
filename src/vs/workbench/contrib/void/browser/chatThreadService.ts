@@ -13,7 +13,8 @@ import { Emitter, Event } from '../../../../base/common/event.js';
 import { IRange } from '../../../../editor/common/core/range.js';
 import { ILLMMessageService } from '../../../../platform/void/common/llmMessageService.js';
 import { IModelService } from '../../../../editor/common/services/model.js';
-import { chat_userMessage, chat_systemMessage } from './prompt/prompts.js';
+import { chat_userMessage, chat_systemMessage, formatComponentExamples } from './prompt/prompts.js';
+import { IVectorSearchService } from '../../../../platform/void/common/vectorSearchService.js';
 
 // one of the square items that indicates a selection in a chat bubble (NOT a file, a Selection of text)
 export type CodeSelection = {
@@ -131,6 +132,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		@IStorageService private readonly _storageService: IStorageService,
 		@IModelService private readonly _modelService: IModelService,
 		@ILLMMessageService private readonly _llmMessageService: ILLMMessageService,
+		@IVectorSearchService private readonly _vectorSearchService: IVectorSearchService,
 	) {
 		super()
 
@@ -192,12 +194,24 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 
 		const currSelns = this.state.currentStagingSelections ?? []
 
+		// Search for relevant component examples
+		const examples = await this._vectorSearchService.search(userMessage, 'component_examples', 3);
+		const componentExamples = examples.map(result => {
+			const payload = result.payload;
+			return {
+				component_name: payload.component_name,
+				component_description: payload.component_description,
+				example_name: payload.example_name,
+				example_description: payload.example_description,
+				similarity_score: result.score,
+			};
+		});
+
 		// add user's message to chat history
 		const instructions = userMessage
 		const content = await chat_userMessage(instructions, currSelns, this._modelService)
 		const userHistoryElt: ChatMessage = { role: 'user', content: content, displayContent: instructions, selections: currSelns }
 		this._addMessageToThread(threadId, userHistoryElt)
-
 
 		this._setStreamState(threadId, { error: undefined })
 
@@ -206,7 +220,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 			logging: { loggingName: 'Chat' },
 			useProviderFor: 'Ctrl+L',
 			messages: [
-				{ role: 'system', content: chat_systemMessage },
+				{ role: 'system', content: chat_systemMessage + formatComponentExamples(componentExamples) },
 				...this.getCurrentThread().messages.map(m => ({ role: m.role, content: m.content || '(empty model output)' })),
 			],
 			onText: ({ newText, fullText }) => {
@@ -218,11 +232,9 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 			onError: (error) => {
 				this.finishStreaming(threadId, this.streamState[threadId]?.messageSoFar ?? '', error)
 			},
-
 		})
 		if (llmCancelToken === null) return
 		this._setStreamState(threadId, { streamingToken: llmCancelToken })
-
 	}
 
 	cancelStreaming(threadId: string) {

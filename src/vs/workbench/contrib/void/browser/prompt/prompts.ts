@@ -10,10 +10,25 @@ import { CodeSelection, StagingSelectionItem, FileSelection } from '../chatThrea
 import { VSReadFile } from '../helpers/readFile.js';
 import { IModelService } from '../../../../../editor/common/services/model.js';
 
-export const chat_systemMessage = `\
-You are a coding assistant. You are given a list of instructions to follow \`INSTRUCTIONS\`, and optionally a list of relevant files \`FILES\`, and selections inside of files \`SELECTIONS\`.
+export const formatComponentExamples = (examples: { component_name: string; component_description: string; example_name: string; example_description: string; }[]) => {
+	if (!examples.length) return '';
 
-Please respond to the user's query.
+	return `\nHERO DESIGN COMPONENTS
+The following are relevant components from our Hero Design system that may help with your task:
+${examples.map(ex => `
+${ex.component_name}
+Description: ${ex.component_description}
+Example: ${ex.example_name} - ${ex.example_description}`).join('\n')}
+`
+}
+
+export const chat_systemMessage = `\
+You are a coding assistant with expertise in Hero Design, our custom React component library. You are given a list of instructions to follow \`INSTRUCTIONS\`, and optionally a list of relevant files \`FILES\`, selections inside of files \`SELECTIONS\`, and relevant Hero Design components \`HERO DESIGN COMPONENTS\`.
+
+Please respond to the user's query, keeping in mind:
+1. When suggesting code changes, prefer using existing Hero Design components when appropriate
+2. Follow Hero Design's patterns and best practices
+3. Maintain consistency with our component library's style and conventions
 
 In the case that the user asks you to make changes to code, you should make sure to return CODE BLOCKS of the changes, as well as explanations and descriptions of the changes.
 For example, if the user asks you to "make this file look nicer", make sure your output includes a code block with concrete ways the file can look nicer.
