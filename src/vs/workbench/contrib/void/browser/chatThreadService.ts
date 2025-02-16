@@ -13,7 +13,8 @@ import { Emitter, Event } from '../../../../base/common/event.js';
 import { IRange } from '../../../../editor/common/core/range.js';
 import { ILLMMessageService } from '../../../../platform/void/common/llmMessageService.js';
 import { IModelService } from '../../../../editor/common/services/model.js';
-import { chat_userMessage, chat_systemMessage } from './prompt/prompts.js';
+import { chat_userMessage, chat_systemMessage, formatComponentExamples } from './prompt/prompts.js';
+import { IVectorSearchService } from '../../../../platform/void/common/vectorSearchService.js';
 
 // one of the square items that indicates a selection in a chat bubble (NOT a file, a Selection of text)
 export type CodeSelection = {
@@ -131,6 +132,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		@IStorageService private readonly _storageService: IStorageService,
 		@IModelService private readonly _modelService: IModelService,
 		@ILLMMessageService private readonly _llmMessageService: ILLMMessageService,
+		@IVectorSearchService private readonly _vectorSearchService: IVectorSearchService,
 	) {
 		super()
 
@@ -188,41 +190,84 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 	}
 
 	async addUserMessageAndStreamResponse(userMessage: string) {
-		const threadId = this.getCurrentThread().id
+		const threadId = this.getCurrentThread().id;
+		const currSelns = this.state.currentStagingSelections ?? [];
 
-		const currSelns = this.state.currentStagingSelections ?? []
+		// Search for relevant component examples across multiple collections
+		const collections = [
+			'component_examples',
+			'component_examples_code',
+			'component_examples_description',
+			'component_examples_purpose',
+			'component_examples_technical',
+			'component_examples_props',
+			'component_examples_patterns',
+			'component_examples_use_cases'
+		];
+
+		// Search all collections at once with a limit of 10 per collection
+		const searchResults = await this._vectorSearchService.search(userMessage, collections, 10);
+
+		// Create a Map to store unique examples using a composite key
+		const uniqueExamples = new Map();
+
+		// Process all results
+		searchResults.forEach(result => {
+			const payload = result.payload;
+			// Create a unique key from the component and example details
+			const key = `${payload.component_name}|${payload.component_description}|${payload.example_name}|${payload.example_description}`;
+
+			// Only keep the result with the higher score if we've seen this combination before
+			if (!uniqueExamples.has(key) || uniqueExamples.get(key).score < result.score) {
+				uniqueExamples.set(key, {
+					component_name: payload.component_name,
+					component_description: payload.component_description,
+					example_name: payload.example_name,
+					example_description: payload.example_description,
+					similarity_score: result.score,
+					collection: result.collection
+				});
+			}
+		});
+
+		// Convert to array, sort by score, and take top 10
+		const componentExamples = Array.from(uniqueExamples.values())
+			.sort((a, b) => b.similarity_score - a.similarity_score)
+			.slice(0, 10);
+
+		console.log('Processed component examples:', {
+			totalResults: componentExamples.length,
+			topScores: componentExamples,
+		});
 
 		// add user's message to chat history
-		const instructions = userMessage
-		const content = await chat_userMessage(instructions, currSelns, this._modelService)
-		const userHistoryElt: ChatMessage = { role: 'user', content: content, displayContent: instructions, selections: currSelns }
-		this._addMessageToThread(threadId, userHistoryElt)
+		const instructions = userMessage;
+		const content = await chat_userMessage(instructions, currSelns, this._modelService);
+		const userHistoryElt: ChatMessage = { role: 'user', content: content, displayContent: instructions, selections: currSelns };
+		this._addMessageToThread(threadId, userHistoryElt);
 
-
-		this._setStreamState(threadId, { error: undefined })
+		this._setStreamState(threadId, { error: undefined });
 
 		const llmCancelToken = this._llmMessageService.sendLLMMessage({
 			messagesType: 'chatMessages',
 			logging: { loggingName: 'Chat' },
 			useProviderFor: 'Ctrl+L',
 			messages: [
-				{ role: 'system', content: chat_systemMessage },
+				{ role: 'system', content: chat_systemMessage + formatComponentExamples(componentExamples) },
 				...this.getCurrentThread().messages.map(m => ({ role: m.role, content: m.content || '(empty model output)' })),
 			],
 			onText: ({ newText, fullText }) => {
-				this._setStreamState(threadId, { messageSoFar: fullText })
+				this._setStreamState(threadId, { messageSoFar: fullText });
 			},
 			onFinalMessage: ({ fullText: content }) => {
-				this.finishStreaming(threadId, content)
+				this.finishStreaming(threadId, content);
 			},
 			onError: (error) => {
-				this.finishStreaming(threadId, this.streamState[threadId]?.messageSoFar ?? '', error)
+				this.finishStreaming(threadId, this.streamState[threadId]?.messageSoFar ?? '', error);
 			},
-
-		})
-		if (llmCancelToken === null) return
-		this._setStreamState(threadId, { streamingToken: llmCancelToken })
-
+		});
+		if (llmCancelToken === null) return;
+		this._setStreamState(threadId, { streamingToken: llmCancelToken });
 	}
 
 	cancelStreaming(threadId: string) {

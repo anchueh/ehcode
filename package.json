@@ -85,6 +85,7 @@
     "@microsoft/1ds-post-js": "^3.2.13",
     "@mistralai/mistralai": "^1.4.0",
     "@parcel/watcher": "2.1.0",
+    "@qdrant/js-client-rest": "^1.13.0",
     "@rrweb/record": "^2.0.0-alpha.17",
     "@rrweb/types": "^2.0.0-alpha.17",
     "@vscode/deviceid": "^0.1.1",
@@ -121,6 +122,7 @@
     "native-is-elevated": "0.7.0",
     "native-keymap": "^3.3.5",
     "native-watchdog": "^1.4.1",
+    "node-gyp-build": "4.8.1",
     "node-pty": "1.1.0-beta21",
     "ollama": "^0.5.11",
     "open": "^8.4.2",
@@ -134,6 +136,7 @@
     "vscode-oniguruma": "1.7.0",
     "vscode-regexpp": "^3.1.0",
     "vscode-textmate": "9.1.0",
+    "ws": "8.13.0",
     "yauzl": "^3.0.0",
     "yazl": "^2.4.3",
     "zod": "^3.24.1"
@@ -261,7 +264,9 @@
     "yaserver": "^0.4.0"
   },
   "overrides": {
-    "node-gyp-build": "4.8.1"
+    "node-gyp-build": "4.8.1",
+    "@parcel/node-addon-api": "2.5.0",
+    "ws": "8.13.0"
   },
   "repository": {
     "type": "git",
@@ -272,5 +277,9 @@
   },
   "optionalDependencies": {
     "windows-foreground-love": "0.5.0"
+  },
+  "resolutions": {
+    "@parcel/node-addon-api": "2.5.0",
+    "ws": "8.13.0"
   }
 }

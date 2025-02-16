@@ -23,7 +23,7 @@ import { URI } from '../../../../base/common/uri.js';
 import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
 
 
-import { mountVoidSettings } from './react/out/void-settings-tsx/index.js'
+import { mountVoidSettings } from './react/out/void-settings-tsx/index.js';
 import { Codicon } from '../../../../base/common/codicons.js';
 import { IDisposable } from '../../../../base/common/lifecycle.js';
 
@@ -49,7 +49,7 @@ class VoidSettingsInput extends EditorInput {
 	}
 
 	override getName(): string {
-		return nls.localize('voidSettingsInputsName', 'Void Settings');
+		return nls.localize('voidSettingsInputsName', 'EH Code Settings');
 	}
 
 	override getIcon() {
@@ -112,7 +112,7 @@ class VoidSettingsPane extends EditorPane {
 
 // register Settings pane
 Registry.as<IEditorPaneRegistry>(EditorExtensions.EditorPane).registerEditorPane(
-	EditorPaneDescriptor.create(VoidSettingsPane, VoidSettingsPane.ID, nls.localize('VoidSettingsPane', "Void Settings Pane")),
+	EditorPaneDescriptor.create(VoidSettingsPane, VoidSettingsPane.ID, nls.localize('VoidSettingsPane', "EH Code Settings Pane")),
 	[new SyncDescriptor(VoidSettingsInput)]
 );
 
@@ -202,7 +202,7 @@ MenuRegistry.appendMenuItem(MenuId.GlobalActivity, {
 	group: '0_command',
 	command: {
 		id: VOID_TOGGLE_SETTINGS_ACTION_ID,
-		title: nls.localize('voidSettings', "Void Settings")
+		title: nls.localize('voidSettings', "EH Code Settings")
 	},
 	order: 1
 });

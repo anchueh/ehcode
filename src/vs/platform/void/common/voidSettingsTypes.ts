@@ -1,4 +1,3 @@
-
 /*--------------------------------------------------------------------------------------
  *  Copyright 2025 Glass Devtools, Inc. All rights reserved.
  *  Licensed under the Apache License, Version 2.0. See LICENSE.txt for more information.
@@ -507,10 +506,14 @@ export const isFeatureNameDisabled = (featureName: FeatureName, settingsState: V
 export type GlobalSettings = {
 	autoRefreshModels: boolean;
 	aiInstructions: string;
+	qdrantUrl: string;
+	qdrantApiKey: string;
 }
 export const defaultGlobalSettings: GlobalSettings = {
 	autoRefreshModels: true,
 	aiInstructions: '',
+	qdrantUrl: '',
+	qdrantApiKey: '',
 }
 
 export type GlobalSettingName = keyof GlobalSettings
