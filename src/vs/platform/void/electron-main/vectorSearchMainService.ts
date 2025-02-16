@@ -10,7 +10,7 @@ import OpenAI from 'openai';
 
 export interface SearchParams {
 	query: string;
-	collectionName: string;
+	collectionNames: string[];
 	limit: number;
 	score_threshold: number;
 	with_payload: boolean;
@@ -20,6 +20,7 @@ export interface SearchResult {
 	id: string;
 	score: number;
 	payload: any;
+	collection?: string; // Added to track which collection the result came from
 }
 
 export class VectorSearchMainService implements IServerChannel {
@@ -47,27 +48,32 @@ export class VectorSearchMainService implements IServerChannel {
 			collections.collections.forEach(collection => {
 				this.collections.add(collection.name);
 			});
+			console.log('Available collections:', Array.from(this.collections));
 		} catch (error) {
 			console.error('Failed to initialize collections:', error);
 		}
 	}
 
-	private async ensureCollectionExists(collectionName: string): Promise<boolean> {
-		if (this.collections.has(collectionName)) {
-			return true;
-		}
+	private async ensureCollectionsExist(collectionNames: string[]): Promise<string[]> {
+		const existingCollections: string[] = [];
 
 		try {
 			const collections = await this.client.getCollections();
-			const exists = collections.collections.some(c => c.name === collectionName);
-			if (exists) {
-				this.collections.add(collectionName);
+			const availableCollections = new Set(collections.collections.map(c => c.name));
+
+			for (const name of collectionNames) {
+				if (availableCollections.has(name)) {
+					existingCollections.push(name);
+					this.collections.add(name);
+				} else {
+					console.warn(`Collection "${name}" does not exist in Qdrant.`);
+				}
 			}
-			return exists;
 		} catch (error) {
-			console.error(`Failed to check collection ${collectionName}:`, error);
-			return false;
+			console.error(`Failed to check collections:`, error);
 		}
+
+		return existingCollections;
 	}
 
 	listen(_: unknown, event: string): Event<any> {
@@ -110,22 +116,46 @@ export class VectorSearchMainService implements IServerChannel {
 		try {
 			if (command === 'search') {
 				const params = args as SearchParams;
+				console.log('Search request:', { query: params.query, collections: params.collectionNames });
 
-				// Check if collection exists before proceeding
-				const collectionExists = await this.ensureCollectionExists(params.collectionName);
-				if (!collectionExists) {
-					throw new Error(`Collection "${params.collectionName}" does not exist in Qdrant.`);
+				// Check if collections exist before proceeding
+				const existingCollections = await this.ensureCollectionsExist(params.collectionNames);
+				if (existingCollections.length === 0) {
+					throw new Error(`None of the requested collections exist in Qdrant.`);
 				}
 
 				const embedding = await this.getEmbedding(params.query, args.settings);
 
-				const results = await this.client.search(params.collectionName, {
-					vector: embedding,
-					limit: params.limit,
-					score_threshold: params.score_threshold,
-					with_payload: params.with_payload,
+				// Search all collections in parallel
+				const searchPromises = existingCollections.map(async (collectionName) => {
+					const results = await this.client.search(collectionName, {
+						vector: embedding,
+						limit: params.limit,
+						score_threshold: params.score_threshold,
+						with_payload: params.with_payload,
+					});
+					// Add collection name to each result
+					return results.map(result => ({ ...result, collection: collectionName }));
 				});
-				return results;
+
+				const allResults = await Promise.all(searchPromises);
+				const flatResults = allResults.flat();
+
+				console.log('Search results:', {
+					query: params.query,
+					totalResults: flatResults.length,
+					resultsByCollection: existingCollections.reduce((acc, collection) => {
+						acc[collection] = flatResults.filter(r => r.collection === collection).length;
+						return acc;
+					}, {} as Record<string, number>),
+					topScores: flatResults.map(r => ({
+						score: r.score,
+						collection: r.collection,
+						payload: r.payload
+					}))
+				});
+
+				return flatResults;
 			}
 			throw new Error(`Command not found: ${command}`);
 		} catch (error) {

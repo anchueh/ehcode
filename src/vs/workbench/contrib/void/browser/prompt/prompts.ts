@@ -15,10 +15,14 @@ export const formatComponentExamples = (examples: { component_name: string; comp
 
 	return `\nHERO DESIGN COMPONENTS
 The following are relevant components from our Hero Design system that may help with your task:
+
 ${examples.map(ex => `
 ${ex.component_name}
 Description: ${ex.component_description}
 Example: ${ex.example_name} - ${ex.example_description}`).join('\n')}
+
+Notes:
+   - All components should be imported from '@hero-design/react'
 `
 }
 

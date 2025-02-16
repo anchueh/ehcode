@@ -11,13 +11,14 @@ import { InstantiationType, registerSingleton } from '../../instantiation/common
 
 export interface IVectorSearchService {
 	readonly _serviceBrand: undefined;
-	search(query: string, collectionName: string, limit?: number): Promise<SearchResult[]>;
+	search(query: string, collectionNames: string | string[], limit?: number): Promise<SearchResult[]>;
 }
 
 export interface SearchResult {
 	id: string;
 	score: number;
 	payload: any;
+	collection?: string;
 }
 
 export const IVectorSearchService = createDecorator<IVectorSearchService>('vectorSearchService');
@@ -26,7 +27,7 @@ export class VectorSearchService implements IVectorSearchService {
 	declare readonly _serviceBrand: undefined;
 	private readonly channel: IChannel;
 	private readonly DEFAULT_LIMIT = 5;
-	private readonly DEFAULT_SCORE_THRESHOLD = 0.5;
+	private readonly DEFAULT_SCORE_THRESHOLD = 0.4;
 
 	constructor(
 		@IMainProcessService mainProcessService: IMainProcessService,
@@ -35,12 +36,12 @@ export class VectorSearchService implements IVectorSearchService {
 		this.channel = mainProcessService.getChannel('void-channel-vector-search');
 	}
 
-	async search(query: string, collectionName: string, limit = this.DEFAULT_LIMIT): Promise<SearchResult[]> {
+	async search(query: string, collectionNames: string | string[], limit = this.DEFAULT_LIMIT): Promise<SearchResult[]> {
 		try {
 			const settings = this.voidSettingsService.state.settingsOfProvider;
 			const results = await this.channel.call('search', {
 				query,
-				collectionName,
+				collectionNames: Array.isArray(collectionNames) ? collectionNames : [collectionNames],
 				limit,
 				score_threshold: this.DEFAULT_SCORE_THRESHOLD,
 				with_payload: true,
