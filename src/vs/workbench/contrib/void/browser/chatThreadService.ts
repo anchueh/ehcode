@@ -237,11 +237,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 
 		console.log('Processed component examples:', {
 			totalResults: componentExamples.length,
-			topScores: componentExamples.map(ex => ({
-				score: ex.similarity_score,
-				component: ex.component_name,
-				collection: ex.collection
-			}))
+			topScores: componentExamples,
 		});
 
 		// add user's message to chat history
