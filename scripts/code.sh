@@ -41,8 +41,6 @@ function code() {
 	export VSCODE_CLI=1
 	export ELECTRON_ENABLE_STACK_DUMPING=1
 	export ELECTRON_ENABLE_LOGGING=1
-	export QDRANT_URL="https://c9984dc6-7cce-4563-932b-eeb384579a37.us-east4-0.gcp.cloud.qdrant.io"
-	export QDRANT_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIiwiZXhwIjoxNzQ3NDU0MjYzfQ.NPc0d9ZhXvxf0-UcFddxLSGu4JHJhlgIIjEeXAxS-Bg"
 
 	DISABLE_TEST_EXTENSION="--disable-extension=vscode.vscode-api-tests"
 	if [[ "$@" == *"--extensionTestsPath"* ]]; then

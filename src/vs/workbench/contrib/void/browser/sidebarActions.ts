@@ -223,7 +223,7 @@ registerAction2(class extends Action2 {
 	constructor() {
 		super({
 			id: 'void.settingsAction',
-			title: 'Void Settings',
+			title: 'EH Code Settings',
 			icon: { id: 'settings-gear' },
 			menu: [{ id: MenuId.ViewTitle, group: 'navigation', when: ContextKeyExpr.equals('view', VOID_VIEW_ID), }]
 		});

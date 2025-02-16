@@ -3,13 +3,13 @@
  *  Licensed under the Apache License, Version 2.0. See LICENSE.txt for more information.
  *--------------------------------------------------------------------------------------*/
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 import { InputBox } from '../../../../../../../base/browser/ui/inputbox/inputBox.js'
-import { ProviderName, SettingName, displayInfoOfSettingName, providerNames, VoidModelInfo, globalSettingNames, customSettingNamesOfProvider, RefreshableProviderName, refreshableProviderNames, displayInfoOfProviderName, defaultProviderSettings, nonlocalProviderNames, localProviderNames, GlobalSettingName, featureNames, displayInfoOfFeatureName, isProviderNameDisabled } from '../../../../../../../platform/void/common/voidSettingsTypes.js'
+import { ProviderName, SettingName, displayInfoOfSettingName, providerNames, VoidModelInfo, customSettingNamesOfProvider, RefreshableProviderName, refreshableProviderNames, displayInfoOfProviderName, nonlocalProviderNames, localProviderNames, GlobalSettingName, featureNames, displayInfoOfFeatureName, isProviderNameDisabled } from '../../../../../../../platform/void/common/voidSettingsTypes.js'
 import ErrorBoundary from '../sidebar-tsx/ErrorBoundary.js'
-import { VoidButton, VoidCheckBox, VoidCustomDropdownBox, VoidInputBox, VoidInputBox2, VoidSwitch } from '../util/inputs.js'
+import { VoidButton, VoidCustomDropdownBox, VoidInputBox, VoidInputBox2, VoidSwitch } from '../util/inputs.js'
 import { useAccessor, useIsDark, useRefreshModelListener, useRefreshModelState, useSettingsState } from '../util/services.js'
-import { X, RefreshCw, Loader2, Check, MoveRight } from 'lucide-react'
+import { X, RefreshCw, Loader2, Check } from 'lucide-react'
 import { useScrollbarStyles } from '../util/useScrollbarStyles.js'
 import { isWindows, isLinux, isMacintosh } from '../../../../../../../base/common/platform.js'
 import { URI } from '../../../../../../../base/common/uri.js'
@@ -548,6 +548,8 @@ const OneClickSwitchButton = () => {
 const GeneralTab = () => {
 	const accessor = useAccessor()
 	const commandService = accessor.get('ICommandService')
+	const voidSettingsService = accessor.get('IVoidSettingsService')
+	const voidSettingsState = useSettingsState()
 
 	return <>
 
@@ -588,6 +590,31 @@ const GeneralTab = () => {
 			<AIInstructionsBox />
 		</div>
 
+        <div className='mt-12'>
+            <h2 className={`text-3xl mb-2`}>Qdrant Vector Search</h2>
+            <h4 className={`text-void-fg-3 mb-2`}>{`Configure Qdrant for vector search capabilities.`}</h4>
+            <div className='flex flex-col gap-4'>
+                <VoidInputBox2
+                    className='p-3 rounded-sm'
+                    initValue={voidSettingsState.globalSettings.qdrantUrl || ''}
+                    placeholder="Qdrant URL"
+                    multiline={false}
+                    onChangeText={(newText) => {
+                        voidSettingsService.setGlobalSetting('qdrantUrl', newText)
+                    }}
+                />
+                <VoidInputBox2
+                    className='p-3 rounded-sm'
+                    initValue={voidSettingsState.globalSettings.qdrantApiKey || ''}
+                    placeholder="Qdrant API Key"
+                    multiline={false}
+                    onChangeText={(newText) => {
+                        voidSettingsService.setGlobalSetting('qdrantApiKey', newText)
+                    }}
+                />
+            </div>
+        </div>
+
 		<div className='mt-12'>
 			<h2 className={`text-3xl mb-2`}>Model Selection</h2>
 			{featureNames.map(featureName =>
@@ -618,7 +645,7 @@ export const Settings = () => {
 
 			<div className='max-w-5xl mx-auto'>
 
-				<h1 className='text-2xl w-full'>Void Settings</h1>
+				<h1 className='text-2xl w-full'>EH Code Settings</h1>
 
 				{/* separator */}
 				<div className='w-full h-[1px] my-4' />

@@ -24,64 +24,28 @@ export interface SearchResult {
 }
 
 export class VectorSearchMainService implements IServerChannel {
-	private readonly client: QdrantClient;
+	private client: QdrantClient | undefined;
 	private readonly _onSearchResult = new Emitter<SearchResult[]>();
 	private readonly EMBEDDING_MODEL = 'text-embedding-3-small';
 	private readonly VECTOR_SIZE = 1536;
 	private readonly collections = new Set<string>();
 
 	constructor() {
-		// Get values from settings with fallbacks
-		const qdrantUrl = process.env.QDRANT_URL;
-		const qdrantApiKey = process.env.QDRANT_API_KEY;
-
-		if (!qdrantUrl || !qdrantApiKey) {
-			throw new Error('Qdrant configuration is missing. Please set QDRANT_URL and QDRANT_API_KEY environment variables.');
-		}
-
-		console.log('Qdrant configuration:', { qdrantUrl });
-
-		this.client = new QdrantClient({
-			url: qdrantUrl,
-			apiKey: qdrantApiKey,
-		});
-
-		// Initialize collections cache
 		this.initializeCollections();
 	}
 
 	private async initializeCollections() {
 		try {
-			const collections = await this.client.getCollections();
-			collections.collections.forEach(collection => {
-				this.collections.add(collection.name);
-			});
-			console.log('Available collections:', Array.from(this.collections));
+			if (this.client) {
+				const collections = await this.client.getCollections();
+				collections.collections.forEach(collection => {
+					this.collections.add(collection.name);
+				});
+				console.log('Available collections:', Array.from(this.collections));
+			}
 		} catch (error) {
 			console.error('Failed to initialize collections:', error);
 		}
-	}
-
-	private async ensureCollectionsExist(collectionNames: string[]): Promise<string[]> {
-		const existingCollections: string[] = [];
-
-		try {
-			const collections = await this.client.getCollections();
-			const availableCollections = new Set(collections.collections.map(c => c.name));
-
-			for (const name of collectionNames) {
-				if (availableCollections.has(name)) {
-					existingCollections.push(name);
-					this.collections.add(name);
-				} else {
-					console.warn(`Collection "${name}" does not exist in Qdrant.`);
-				}
-			}
-		} catch (error) {
-			console.error(`Failed to check collections:`, error);
-		}
-
-		return existingCollections;
 	}
 
 	listen(_: unknown, event: string): Event<any> {
@@ -91,39 +55,30 @@ export class VectorSearchMainService implements IServerChannel {
 		throw new Error(`Event not found: ${event}`);
 	}
 
-	private async getEmbedding(text: string, settings: any): Promise<number[]> {
-		try {
-			if (!settings.openAI?._didFillInProviderSettings) {
-				throw new Error('OpenAI settings not configured. Please configure OpenAI settings in Void Settings.');
-			}
-
-			const openai = new OpenAI({
-				baseURL: settings.openAI.endpoint,
-				apiKey: settings.openAI.apiKey,
-				dangerouslyAllowBrowser: true
-			});
-
-			const response = await openai.embeddings.create({
-				model: this.EMBEDDING_MODEL,
-				input: text,
-			});
-
-			const embedding = response.data[0].embedding;
-			if (embedding.length !== this.VECTOR_SIZE) {
-				throw new Error(`Unexpected embedding size: ${embedding.length} (expected ${this.VECTOR_SIZE})`);
-			}
-
-			return embedding;
-		} catch (error) {
-			console.error('Error getting embedding:', error);
-			throw error;
-		}
-	}
-
 	async call(_: unknown, command: string, args: any): Promise<any> {
 		try {
 			if (command === 'search') {
 				const params = args as SearchParams;
+				const settings = args.settings;
+
+				if (!settings?.openAI?._didFillInProviderSettings) {
+					throw new Error('OpenAI settings not configured. Please configure OpenAI settings in EH Code Settings.');
+				}
+
+				const qdrantUrl = settings.globalSettings.qdrantUrl;
+				const qdrantApiKey = settings.globalSettings.qdrantApiKey;
+
+				if (!qdrantUrl || !qdrantApiKey) {
+					throw new Error('Qdrant configuration is missing. Please configure Qdrant URL and API Key in Settings > General.');
+				}
+
+				if (!this.client) {
+					this.client = new QdrantClient({
+						url: qdrantUrl,
+						apiKey: qdrantApiKey,
+					});
+				}
+
 				console.log('Search request:', { query: params.query, collections: params.collectionNames });
 
 				// Check if collections exist before proceeding
@@ -132,10 +87,19 @@ export class VectorSearchMainService implements IServerChannel {
 					throw new Error(`None of the requested collections exist in Qdrant.`);
 				}
 
-				const embedding = await this.getEmbedding(params.query, args.settings);
+				const openai = new OpenAI({
+					baseURL: settings.openAI.endpoint,
+					apiKey: settings.openAI.apiKey,
+					dangerouslyAllowBrowser: true
+				});
+
+				const embedding = await this.getEmbedding(params.query, openai);
 
 				// Search all collections in parallel
 				const searchPromises = existingCollections.map(async (collectionName) => {
+					if (!this.client) {
+						throw new Error('Qdrant client is not initialized');
+					}
 					const results = await this.client.search(collectionName, {
 						vector: embedding,
 						limit: params.limit,
@@ -170,5 +134,49 @@ export class VectorSearchMainService implements IServerChannel {
 			console.error('VectorSearchMainService error:', error);
 			throw error;
 		}
+	}
+
+	private async getEmbedding(text: string, openai: OpenAI): Promise<number[]> {
+		try {
+			const response = await openai.embeddings.create({
+				model: this.EMBEDDING_MODEL,
+				input: text,
+			});
+
+			const embedding = response.data[0].embedding;
+			if (embedding.length !== this.VECTOR_SIZE) {
+				throw new Error(`Unexpected embedding size: ${embedding.length} (expected ${this.VECTOR_SIZE})`);
+			}
+
+			return embedding;
+		} catch (error) {
+			console.error('Error getting embedding:', error);
+			throw error;
+		}
+	}
+
+	private async ensureCollectionsExist(collectionNames: string[]): Promise<string[]> {
+		const existingCollections: string[] = [];
+
+		try {
+			if (!this.client) {
+				throw new Error('Qdrant client is not initialized');
+			}
+			const collections = await this.client.getCollections();
+			const availableCollections = new Set(collections.collections.map(c => c.name));
+
+			for (const name of collectionNames) {
+				if (availableCollections.has(name)) {
+					existingCollections.push(name);
+					this.collections.add(name);
+				} else {
+					console.warn(`Collection "${name}" does not exist in Qdrant.`);
+				}
+			}
+		} catch (error) {
+			console.error(`Failed to check collections:`, error);
+		}
+
+		return existingCollections;
 	}
 }

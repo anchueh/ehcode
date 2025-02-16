@@ -98,15 +98,15 @@ export class LLMMessageService extends Disposable implements ILLMMessageService 
 			let message: string
 
 			if (isDisabled === 'addProvider' || isDisabled === 'providerNotAutoDetected')
-				message = `Please add a provider in Void Settings.`
+				message = `Please add a provider in EH Code Settings.`
 			else if (isDisabled === 'addModel')
 				message = `Please add a model.`
 			else if (isDisabled === 'needToEnableModel')
 				message = `Please enable a model.`
 			else if (isDisabled === 'notFilledIn')
-				message = `Please fill in Void Settings${modelSelection !== null ? ` for ${displayInfoOfProviderName(modelSelection.providerName).title}` : ''}.`
+				message = `Please fill in EH Code Settings${modelSelection !== null ? ` for ${displayInfoOfProviderName(modelSelection.providerName).title}` : ''}.`
 			else
-				message = 'Please add a provider in Void Settings.'
+				message = 'Please add a provider in EH Code Settings.'
 
 			onError({ message, fullError: null })
 			return null

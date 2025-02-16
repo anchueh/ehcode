@@ -38,7 +38,10 @@ export class VectorSearchService implements IVectorSearchService {
 
 	async search(query: string, collectionNames: string | string[], limit = this.DEFAULT_LIMIT): Promise<SearchResult[]> {
 		try {
-			const settings = this.voidSettingsService.state.settingsOfProvider;
+			const settings = {
+				openAI: this.voidSettingsService.state.settingsOfProvider.openAI,
+				globalSettings: this.voidSettingsService.state.globalSettings
+			};
 			const results = await this.channel.call('search', {
 				query,
 				collectionNames: Array.isArray(collectionNames) ? collectionNames : [collectionNames],
