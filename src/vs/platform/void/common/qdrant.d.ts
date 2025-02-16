@@ -34,6 +34,6 @@ declare module '@qdrant/js-client-rest' {
 	}
 
 	export class QdrantClient {
-		constructor(config: { url: string });
+		constructor(config: { url: string; apiKey?: string });
 	}
 }

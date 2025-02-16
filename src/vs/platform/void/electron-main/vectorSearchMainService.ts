@@ -31,11 +31,19 @@ export class VectorSearchMainService implements IServerChannel {
 	private readonly collections = new Set<string>();
 
 	constructor() {
-		const qdrantHost = process.env.QDRANT_HOST || 'localhost';
-		const qdrantPort = parseInt(process.env.QDRANT_PORT || '6333', 10);
+		// Get values from settings with fallbacks
+		const qdrantUrl = process.env.QDRANT_URL;
+		const qdrantApiKey = process.env.QDRANT_API_KEY;
+
+		if (!qdrantUrl || !qdrantApiKey) {
+			throw new Error('Qdrant configuration is missing. Please set QDRANT_URL and QDRANT_API_KEY environment variables.');
+		}
+
+		console.log('Qdrant configuration:', { qdrantUrl });
 
 		this.client = new QdrantClient({
-			url: `http://${qdrantHost}:${qdrantPort}`,
+			url: qdrantUrl,
+			apiKey: qdrantApiKey,
 		});
 
 		// Initialize collections cache

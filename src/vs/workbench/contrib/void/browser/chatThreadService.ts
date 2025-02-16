@@ -198,8 +198,11 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 			'component_examples',
 			'component_examples_code',
 			'component_examples_description',
-			'component_examples_gpt_description',
-			'component_examples_patterns'
+			'component_examples_purpose',
+			'component_examples_technical',
+			'component_examples_props',
+			'component_examples_patterns',
+			'component_examples_use_cases'
 		];
 
 		// Search all collections at once with a limit of 10 per collection
